@@ -69,6 +69,10 @@ public class JTHandlerInterceptor implements HandlerInterceptor<JTMessage> {
     @Override
     public boolean beforeHandle(JTMessage request, Session session) {
         int messageId = request.getMessageId();
+        if (!request.isVerified()) {
+            log.warn("忽略校验失败的设备报文，clientId={},messageId={}", request.getClientId(), messageId);
+            return false;
+        }
         if (messageId == JT808.终端注册 || messageId == JT808.终端鉴权)
             return true;
         if (!session.isRegistered()) {

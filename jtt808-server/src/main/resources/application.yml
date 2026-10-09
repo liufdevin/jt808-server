@@ -1,4 +1,10 @@
 spring:
+  # MySQL 连接配置 部署时可用外置 application.yml 覆盖。
+  datasource:
+    url: "jdbc:mysql://192.168.0.200:3306/gps_server?useUnicode=true&characterEncoding=UTF-8&connectionTimeZone=Asia/Shanghai"
+    username: "gps_server"
+    password: "bjkj0818"
+    driver-class-name: com.mysql.cj.jdbc.Driver
   application:
     name: jt808
   jackson:
@@ -22,9 +28,13 @@ server:
   port: 8100
 
 jt-server:
+  persistence:
+    initialize-schema: true
+    # 当前 ClientTest 合水口模拟器使用 GCJ02；接入真实设备前按设备实际坐标系修改。
+    coordinate-system: GCJ02
   jt808:
-    tcp-port: 7100
-    udp-port: 7100
+    tcp-port: 51150
+    udp-port: 51150
     idle-timeout: 180
     message-package: org.yzh.protocol
     t0801:

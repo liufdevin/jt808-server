@@ -1,0 +1,14 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "编译模拟终端",
+            "type": "shell",
+            "command": "mvn -pl jtt808-server -am '-Dmaven.test.skip=false' '-DskipTests' test-compile",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

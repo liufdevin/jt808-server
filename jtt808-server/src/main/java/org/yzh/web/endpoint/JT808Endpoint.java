@@ -1,7 +1,6 @@
 package org.yzh.web.endpoint;
 
 import io.github.yezhihao.netmc.core.annotation.Async;
-import io.github.yezhihao.netmc.core.annotation.AsyncBatch;
 import io.github.yezhihao.netmc.core.annotation.Endpoint;
 import io.github.yezhihao.netmc.core.annotation.Mapping;
 import io.github.yezhihao.netmc.session.Session;
@@ -14,6 +13,7 @@ import org.yzh.protocol.t808.*;
 import org.yzh.web.model.entity.DeviceDO;
 import org.yzh.web.model.enums.SessionKey;
 import org.yzh.web.service.FileService;
+import org.yzh.web.service.GpsPersistenceService;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -28,6 +28,7 @@ import static org.yzh.protocol.commons.JT808.*;
 public class JT808Endpoint {
 
     private final FileService fileService;
+    private final GpsPersistenceService gpsPersistenceService;
 
     @Mapping(types = 终端通用应答, desc = "终端通用应答")
     public Object T0001(T0001 message, Session session) {
@@ -35,8 +36,10 @@ public class JT808Endpoint {
         return null;
     }
 
+    @Async
     @Mapping(types = 终端心跳, desc = "终端心跳")
     public void T0002(JTMessage message, Session session) {
+        gpsPersistenceService.touchDevice(message);
     }
 
     @Mapping(types = 终端注销, desc = "终端注销")
@@ -54,14 +57,16 @@ public class JT808Endpoint {
     public void T8003(T8003 message, Session session) {
     }
 
+    @Async
     @Mapping(types = 终端注册, desc = "终端注册")
     public T8100 T0100(T0100 message, Session session) {
-        session.register(message);
         DeviceDO device = new DeviceDO();
         device.setProtocolVersion(message.getProtocolVersion());
         device.setMobileNo(message.getClientId());
         device.setDeviceId(message.getDeviceId());
         device.setPlateNo(message.getPlateNo());
+        gpsPersistenceService.saveDevice(device);
+        session.register(message);
         session.setAttribute(SessionKey.Device, device);
 
         T8100 result = new T8100();
@@ -71,9 +76,9 @@ public class JT808Endpoint {
         return result;
     }
 
+    @Async
     @Mapping(types = 终端鉴权, desc = "终端鉴权")
     public T0001 T0102(T0102 message, Session session) {
-        session.register(message);
         DeviceDO device = new DeviceDO();
         String[] token = message.getToken().split(",");
         device.setProtocolVersion(message.getProtocolVersion());
@@ -81,6 +86,8 @@ public class JT808Endpoint {
         device.setDeviceId(token[0]);
         if (token.length > 1)
             device.setPlateNo(token[1]);
+        gpsPersistenceService.saveDevice(device);
+        session.register(message);
         session.setAttribute(SessionKey.Device, device);
 
         T0001 result = new T0001();
@@ -104,23 +111,23 @@ public class JT808Endpoint {
     public void T0108(T0108 message, Session session) {
     }
 
-    /**
-     * 异步批量处理
-     * poolSize：参考数据库CPU核心数量
-     * maxElements：最大累积4000条记录处理一次
-     * maxWait：最大等待时间1秒
-     */
-    @AsyncBatch(poolSize = 2, maxElements = 4000, maxWait = 1000)
+    /** 在工作线程提交入库事务后才返回成功，入库失败交由协议拦截器返回失败。 */
+    @Async
     @Mapping(types = 位置信息汇报, desc = "位置信息汇报")
-    public void T0200(List<T0200> list) {
+    public void T0200(T0200 message) {
+        gpsPersistenceService.saveLocations(List.of(message));
     }
 
+    @Async
     @Mapping(types = 定位数据批量上传, desc = "定位数据批量上传")
     public void T0704(T0704 message) {
+        gpsPersistenceService.saveBatchUpload(message);
     }
 
+    @Async
     @Mapping(types = {位置信息查询应答, 车辆控制应答}, desc = "位置信息查询应答/车辆控制应答")
     public void T0201_0500(T0201_0500 message, Session session) {
+        gpsPersistenceService.saveLocations(List.of(message));
         session.response(message);
     }
 

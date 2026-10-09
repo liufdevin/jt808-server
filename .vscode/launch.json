@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "启动服务端 (UTF-8)",
+            "request": "launch",
+            "mainClass": "org.yzh.web.JT808Application",
+            "projectName": "jtt808-server",
+            "vmArgs": "-Dfile.encoding=UTF-8"
+        },
+        {
+            "type": "java",
+            "name": "模拟终端 (ClientTest)",
+            "request": "launch",
+            "mainClass": "org.yzh.client.ClientTest",
+            "projectName": "jtt808-server",
+            "vmArgs": "-Dfile.encoding=UTF-8",
+            "classPaths": [
+                "$Test",
+                "${workspaceFolder}/jtt808-server/target/test-classes"
+            ],
+            "preLaunchTask": "编译模拟终端"
+        }
+    ]
+}
